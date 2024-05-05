@@ -2,6 +2,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE ImpredicativeTypes #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneKindSignatures #-}
@@ -9,8 +10,9 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE NoStarIsType #-}
 
-module Polynomial (Polynomial (..), PrettyShow (..), Degree, canBaskharaSolve, type (.+.), type (.-.)) where
+module Polynomial (Polynomial (..), PrettyShow (..), Degree, canBaskharaSolve, type (.+.), type (.-.), MulCoefficients, ScaleCoefficients) where
 
 import Data.Kind
 import Data.Proxy
@@ -52,6 +54,16 @@ type family SubCoefficients as bs where
   SubCoefficients (a : as) '[] = a : SubCoefficients as '[]
   SubCoefficients '[] (b : bs) = 0 - b : SubCoefficients '[] bs
   SubCoefficients (a : as) (b : bs) = a - b : SubCoefficients as bs
+
+type family ScaleCoefficients a bs where
+  ScaleCoefficients a '[] = '[]
+  ScaleCoefficients a (b : bs) = a GHC.TypeLits.* b : ScaleCoefficients a bs
+
+type family MulCoefficients as bs where
+  MulCoefficients '[] '[] = '[]
+  MulCoefficients '[] bs = '[]
+  MulCoefficients as '[] = '[]
+  MulCoefficients (a : as) bs = AddCoefficients (ScaleCoefficients a bs) (MulCoefficients (0 : as) bs)
 
 type family (.+.) as bs where
   (.+.) (Polynomial as) (Polynomial bs) = Polynomial (AddCoefficients as bs)
